@@ -1,7 +1,5 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { prisma } from "./prisma";
-import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -17,30 +15,40 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+        try {
+          // Send credentials to your external Backend API
+          // ⚠️ Make sure to update "/login" if your endpoint path is different
+          const res = await fetch(`${process.env.BACKEND_API_URL}/login`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: credentials.email,
+              password: credentials.password,
+            }),
+          });
 
-        if (!user || !user.password) {
+          const user = await res.json();
+
+          // Check if the response was successful and user data exists
+          if (!res.ok || !user) {
+            return null;
+          }
+
+          // Return the user object required for the session
+          // Ensure your backend returns these fields
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            image: user.image,
+          };
+        } catch (error) {
+          console.error("Login error:", error);
           return null;
         }
-
-        const isValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
-        if (!isValid) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          image: user.image,
-        };
       },
     }),
   ],
@@ -67,4 +75,3 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
 };
-
