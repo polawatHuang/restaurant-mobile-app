@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
@@ -26,7 +26,7 @@ interface CartItem {
   quantity: number;
 }
 
-export default function MenuPage() {
+function MenuPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const tableId = searchParams.get("tableId");
@@ -270,6 +270,18 @@ export default function MenuPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function MenuPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">กำลังโหลด...</div>
+      </div>
+    }>
+      <MenuPageContent />
+    </Suspense>
   );
 }
 

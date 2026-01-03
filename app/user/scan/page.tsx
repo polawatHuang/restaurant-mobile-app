@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Html5Qrcode } from "html5-qrcode";
 import Button from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Camera, QrCode } from "lucide-react";
 
-export default function ScanQRPage() {
+function ScanQRPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const branchId = searchParams.get("branchId");
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState("");
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -152,6 +154,18 @@ export default function ScanQRPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function ScanQRPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">กำลังโหลด...</div>
+      </div>
+    }>
+      <ScanQRPageContent />
+    </Suspense>
   );
 }
 

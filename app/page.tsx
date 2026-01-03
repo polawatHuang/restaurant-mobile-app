@@ -15,7 +15,7 @@ export default async function Home() {
   } else if (session.user.role === "COOKER") {
     redirect("/cooker/orders");
   } else {
-    redirect("/user/scan");
+    redirect("/user/select-branch");
   }
 }
 

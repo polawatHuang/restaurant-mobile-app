@@ -5,6 +5,7 @@ import Button from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import AdminNav from "@/components/AdminNav";
+import { formatCurrency } from "@/lib/utils";
 
 interface User {
   id: string;

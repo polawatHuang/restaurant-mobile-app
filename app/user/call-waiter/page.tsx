@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -33,7 +33,7 @@ const waiterOptions = [
   },
 ];
 
-export default function CallWaiterPage() {
+function CallWaiterPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const tableId = searchParams.get("tableId");
@@ -163,6 +163,18 @@ export default function CallWaiterPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function CallWaiterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">กำลังโหลด...</div>
+      </div>
+    }>
+      <CallWaiterPageContent />
+    </Suspense>
   );
 }
 

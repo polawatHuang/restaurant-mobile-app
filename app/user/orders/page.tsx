@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -28,7 +28,7 @@ interface Order {
   createdAt: string;
 }
 
-export default function OrdersPage() {
+function OrdersPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const tableId = searchParams.get("tableId");
@@ -193,6 +193,18 @@ export default function OrdersPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function OrdersPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">กำลังโหลด...</div>
+      </div>
+    }>
+      <OrdersPageContent />
+    </Suspense>
   );
 }
 
