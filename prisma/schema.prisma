@@ -1,0 +1,218 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  COOKER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  SERVED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
+
+enum CallWaiterType {
+  UTENSILS
+  CONDIMENTS
+  REFILL_DRINKS
+  OTHER
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String?  @unique
+  name          String
+  phone         String?
+  role          UserRole @default(USER)
+  password      String?
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  orders        Order[]
+  calls         CallWaiter[]
+  careerPath    CareerPath?
+  
+  @@map("users")
+}
+
+model Table {
+  id          String   @id @default(cuid())
+  tableNumber String   @unique
+  qrCode      String   @unique
+  capacity    Int      @default(4)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  orders      Order[]
+  sessions    TableSession[]
+  
+  @@map("tables")
+}
+
+model TableSession {
+  id        String   @id @default(cuid())
+  tableId   String
+  table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  userId    String?
+  userName  String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  orders    Order[]
+  
+  @@map("table_sessions")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  nameEn      String?
+  description String?
+  image       String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  menus       Menu[]
+  
+  @@map("categories")
+}
+
+model Menu {
+  id          String   @id @default(cuid())
+  name        String
+  nameEn      String?
+  description String?
+  price       Float
+  image       String?
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  orderItems  OrderItem[]
+  
+  @@map("menus")
+}
+
+model Ingredient {
+  id          String   @id @default(cuid())
+  name        String
+  nameEn      String?
+  unit        String
+  quantity    Float    @default(0)
+  minQuantity Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("ingredients")
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  orderNumber   String        @unique
+  tableId       String
+  table         Table         @relation(fields: [tableId], references: [id])
+  sessionId     String?
+  session       TableSession? @relation(fields: [sessionId], references: [id])
+  userId        String?
+  user          User?         @relation(fields: [userId], references: [id])
+  userName      String?
+  status        OrderStatus   @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
+  totalAmount   Float         @default(0)
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  items         OrderItem[]
+  payments      Payment[]
+  
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuId      String
+  menu        Menu     @relation(fields: [menuId], references: [id])
+  quantity    Int
+  price       Float
+  specialNote String?
+  status      OrderStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("order_items")
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  orderId     String
+  order       Order         @relation(fields: [orderId], references: [id])
+  amount      Float
+  method      String
+  status      PaymentStatus @default(PENDING)
+  reference   String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  @@map("payments")
+}
+
+model CallWaiter {
+  id          String         @id @default(cuid())
+  tableId     String
+  userId      String?
+  user        User?          @relation(fields: [userId], references: [id])
+  userName    String?
+  type        CallWaiterType
+  message     String?
+  isResolved  Boolean        @default(false)
+  resolvedAt  DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  
+  @@map("call_waiter")
+}
+
+model CareerPath {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  position        String
+  salary          Float    @default(0)
+  improvementPoints Int    @default(0)
+  level           Int      @default(1)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("career_paths")
+}
+
