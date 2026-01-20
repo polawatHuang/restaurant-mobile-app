@@ -1,98 +1,119 @@
-"use client";
+import React from 'react';
+import Link from 'next/link';
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Users, Utensils, DollarSign, TrendingUp } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
-import AdminNav from "@/components/AdminNav";
+// 1. Define Data Types
+interface DashboardStats {
+  revenue: number;
+  totalOrders: number;
+  totalUsers: number;
+  recentOrders: {
+    id: number;
+    status: string;
+    totalAmount: number;
+    createdAt: string;
+    userName: string;
+  }[];
+}
 
-export default function AdminDashboard() {
-  const [stats, setStats] = useState({
-    totalOrders: 0,
-    todayRevenue: 0,
-    activeUsers: 0,
-    pendingOrders: 0,
+// 2. Fetch Data from API
+async function getDashboardData(): Promise<DashboardStats> {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/stats`, {
+    cache: 'no-store', // Ensure real-time data
   });
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
+  if (!res.ok) {
+    throw new Error('Failed to fetch dashboard stats');
+  }
 
-  const fetchStats = async () => {
-    try {
-      const res = await fetch("/api/admin/stats");
-      const data = await res.json();
-      setStats(data);
-    } catch (err) {
-      console.error("Error fetching stats:", err);
-    }
-  };
+  return res.json();
+}
+
+export default async function AdminDashboardPage() {
+  let data: DashboardStats | null = null;
+  
+  try {
+    data = await getDashboardData();
+  } catch (err) {
+    return <div className="p-6 text-red-500">Error: Could not load dashboard data.</div>;
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNav />
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <h1 className="text-3xl font-bold text-primary-600 mb-6">แดชบอร์ด</h1>
+    <div className="p-8 bg-gray-50 min-h-screen">
+      <h1 className="text-3xl font-bold mb-8 text-gray-800">Dashboard Overview</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">ยอดขายวันนี้</p>
-                  <p className="text-2xl font-bold text-primary-600">
-                    {formatCurrency(stats.todayRevenue)}
-                  </p>
-                </div>
-                <DollarSign className="w-12 h-12 text-primary-500" />
-              </div>
-            </CardContent>
-          </Card>
+      {/* --- STATS CARDS --- */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Revenue Card */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <h3 className="text-gray-500 text-sm uppercase tracking-wider font-semibold">Total Revenue</h3>
+          <p className="text-3xl font-bold text-green-600 mt-2">
+            ${Number(data.revenue).toLocaleString()}
+          </p>
+        </div>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">ออเดอร์ทั้งหมด</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {stats.totalOrders}
-                  </p>
-                </div>
-                <Utensils className="w-12 h-12 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
+        {/* Orders Card */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <h3 className="text-gray-500 text-sm uppercase tracking-wider font-semibold">Total Orders</h3>
+          <p className="text-3xl font-bold text-blue-600 mt-2">
+            {data.totalOrders.toLocaleString()}
+          </p>
+        </div>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">ออเดอร์รอดำเนินการ</p>
-                  <p className="text-2xl font-bold text-yellow-600">
-                    {stats.pendingOrders}
-                  </p>
-                </div>
-                <TrendingUp className="w-12 h-12 text-yellow-500" />
-              </div>
-            </CardContent>
-          </Card>
+        {/* Users Card */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <h3 className="text-gray-500 text-sm uppercase tracking-wider font-semibold">Registered Users</h3>
+          <p className="text-3xl font-bold text-purple-600 mt-2">
+            {data.totalUsers.toLocaleString()}
+          </p>
+        </div>
+      </div>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">ผู้ใช้ทั้งหมด</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {stats.activeUsers}
-                  </p>
-                </div>
-                <Users className="w-12 h-12 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
+      {/* --- RECENT ORDERS TABLE --- */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
+          <h2 className="font-semibold text-gray-700">Recent Orders</h2>
+          <Link href="/admin/orders" className="text-sm text-blue-600 hover:underline">
+            View All
+          </Link>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm text-gray-600">
+            <thead className="bg-gray-50 text-xs uppercase font-semibold text-gray-500">
+              <tr>
+                <th className="px-6 py-3">Order ID</th>
+                <th className="px-6 py-3">User</th>
+                <th className="px-6 py-3">Date</th>
+                <th className="px-6 py-3">Amount</th>
+                <th className="px-6 py-3">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {data.recentOrders.map((order) => (
+                <tr key={order.id} className="hover:bg-gray-50 transition">
+                  <td className="px-6 py-4 font-medium">#{order.id}</td>
+                  <td className="px-6 py-4">{order.userName || 'Guest'}</td>
+                  <td className="px-6 py-4">
+                    {new Date(order.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 font-medium text-gray-900">
+                    ${Number(order.totalAmount).toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                      order.status === 'PAID' ? 'bg-green-100 text-green-700' :
+                      order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-gray-100 text-gray-600'
+                    }`}>
+                      {order.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   );
 }
-
